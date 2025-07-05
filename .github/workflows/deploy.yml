@@ -1,0 +1,65 @@
+# deploy.yml
+
+name: Deploy to GitHub Pages
+
+# 触发条件：在推送到 main 分支时运行此工作流
+on:
+  push:
+    branches: [ "main" ] # 或者你的主分支名，如 master
+  # 允许你手动从 Actions 标签页运行此工作流
+  workflow_dispatch:
+
+# 设置 GITHUB_TOKEN 的权限，以便部署到 GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 只允许一个并发部署，跳过在进行中的运行之间排队的运行。
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+# 定义工作任务
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      # 步骤1：检出代码
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 步骤2：设置 Node.js 环境
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18 # 根据项目需要选择合适的 Node.js 版本
+
+      # 步骤3：安装项目依赖
+      - name: Install dependencies
+        run: npm install
+
+      # 步骤4：构建项目，并将 Secret 注入环境变量
+      - name: Build project
+        run: npm run build
+        env:
+          # 将 GitHub Secret 赋值给 Vite 能识别的环境变量
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+
+      # 步骤5：配置 GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      # 步骤6：上传构建产物 (dist 文件夹)
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist' # 确认你的构建输出文件夹是 dist
+
+      # 步骤7：部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
