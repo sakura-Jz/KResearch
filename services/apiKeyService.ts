@@ -1,62 +1,62 @@
-// services/ApiKeyService.ts(或文件所在的任何位置)
+// services/ApiKeyService.ts (or wherever the file is located)
 
-班级 ApiKeyService {
-    私人的 userApiKey: 线 | 空 = 空;
-    私人的 只读的 hasEnvKey: 布尔型;
+class ApiKeyService {
+    private userApiKey: string | null = null;
+    private readonly hasEnvKey: boolean;
 
-    构造器() {
-        //修改1:使用Vite的语法访问环境变量。
-        //变量名必须以“VITE_”开头。
-        常数 envKey = 进口.自指的.包封/包围（动词envelop的简写）.VITE _双子座_API_KEY;
+    constructor() {
+        // MODIFICATION 1: Use Vite's syntax to access the environment variable.
+        // The variable name must start with 'VITE_'.
+        const envKey = import.meta.env.VITE_GEMINI_API_KEY;
         
-        这.hasEnvKey = !!envKey && envKey.长度 > 0;
+        this.hasEnvKey = !!envKey && envKey.length > 0;
         
-        //这部分逻辑保持不变。如果没有找到环境密钥，
-        //它退回到检查localStorage。
-        如果 (!这.hasEnvKey) {
-            尝试 {
-                这.userApiKey = 本地存储.getItem(' gemini_api_key ');
-            } 捕捉 (e) {
-                安慰.警告(无法访问localStorage。将不保留API密钥。);
-                这.userApiKey = 空;
+        // This part of the logic remains the same. If no environment key is found,
+        // it falls back to checking localStorage.
+        if (!this.hasEnvKey) {
+            try {
+                this.userApiKey = localStorage.getItem('gemini_api_key');
+            } catch (e) {
+                console.warn("Could not access localStorage. API key will not be persisted.");
+                this.userApiKey = null;
             }
         }
     }
 
-    公众的 哈斯基(): 布尔型 {
-        返回 这.hasEnvKey || !!这.userApiKey;
+    public hasKey(): boolean {
+        return this.hasEnvKey || !!this.userApiKey;
     }
 
-    公众的 isEnvKey(): 布尔型 {
-        返回 这.hasEnvKey;
+    public isEnvKey(): boolean {
+        return this.hasEnvKey;
     }
 
-    公众的 getApiKey(): 线 | 不明确的 {
-        如果 (这.hasEnvKey) {
-            //修改2:从Vite的环境变量中返回key。
-            返回 进口.自指的.包封/包围（动词envelop的简写）.VITE _双子座_API_KEY;
+    public getApiKey(): string | undefined {
+        if (this.hasEnvKey) {
+            // MODIFICATION 2: Return the key from Vite's environment variables.
+            return import.meta.env.VITE_GEMINI_API_KEY;
         }
-        //这种回退逻辑保持不变。
-        返回 这.userApiKey || 不明确的;
+        // This fallback logic remains the same.
+        return this.userApiKey || undefined;
     }
 
-    公众的 setApiKey(键: 线): 空的 {
-        //这个逻辑很完美，不需要改动。它正确地
-        //防止用户覆盖硬编码的环境密钥。
-        如果 (!这.hasEnvKey) {
-            常数 微调键 = 键.整齐();
-            这.userApiKey = 微调键;
-            尝试 {
-                如果 (微调键) {
-                    本地存储.设置项目(' gemini_api_key ', 微调键);
-                } 其他 {
-                    本地存储.移除项目(' gemini_api_key ');
+    public setApiKey(key: string): void {
+        // This logic is perfect and doesn't need to change. It correctly
+        // prevents a user from overwriting the hardcoded environment key.
+        if (!this.hasEnvKey) {
+            const trimmedKey = key.trim();
+            this.userApiKey = trimmedKey;
+            try {
+                if (trimmedKey) {
+                    localStorage.setItem('gemini_api_key', trimmedKey);
+                } else {
+                    localStorage.removeItem('gemini_api_key');
                 }
-            } 捕捉 (e) {
-                 安慰.警告(无法访问localStorage。将不保留API密钥。);
+            } catch (e) {
+                 console.warn("Could not access localStorage. API key will not be persisted.");
             }
         }
     }
 }
 
-出口 常数 apiKeyService = 新的 ApiKeyService();
+export const apiKeyService = new ApiKeyService();
